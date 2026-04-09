@@ -1,9 +1,8 @@
+package networkProject;
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package networkProject;
-
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -42,21 +41,19 @@ if(request.startsWith("CONNECT:")){
 String NewplayerName=request.substring(8);
 //check plyer name
 if (clients.contains( NewplayerName)){
-   sendmessage("ERROR:Name already taken") ;
+   sendMessage("ERROR:Name already taken") ;
  continue;
 }
  this.playerName = NewplayerName;
 }   
 //add plyer name to connected 
- server.AddconnectedPlayers (playerName);
- 
+	Server.addConnectedPlayer(playerName);
 if(request.startsWith("Play:"))
      if (playerName == null) {
-        sendmessage("ERROR:You must connect first");
+        sendMessage("ERROR:You must connect first");
          continue;
                     }
-  server.addTOWitngRoom(playerName);
-}
+	Server.addToWaitingRoom(playerName);}
 } catch (IOException e){
 System.err.println("IO exception in new client class");
 System.err.println(e.getStackTrace());
@@ -70,7 +67,7 @@ ex.printStackTrace();
 }
 }
 }
-public void  sendmessage(String message){
+public void  sendMessage(String message){
 out.println(message);
     
 }
@@ -82,3 +79,4 @@ aclient.out.println(substring);
 
 
 }
+
