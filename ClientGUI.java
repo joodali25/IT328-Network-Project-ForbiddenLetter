@@ -1,12 +1,10 @@
-
-package com.mycompany.networkprojectphase1;
-
 /**
- *
  * @author Hanan Alghamdi
+ * Modified for full visual integration with StartScreen (Vintage Style)
  */
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -18,6 +16,11 @@ public class ClientGUI extends JFrame {
 
     private static final String SERVER_IP = "localhost";
     private static final int SERVER_PORT = 9090;
+
+    // الألوان المتوافقة مع StartScreen
+    private final Color creamBG = new Color(245, 241, 222);
+    private final Color darkNavy = new Color(44, 51, 62);
+    private final Color buttonGreen = new Color(112, 146, 149);
 
     private Socket socket;
     private PrintWriter out;
@@ -38,63 +41,125 @@ public class ClientGUI extends JFrame {
 
     private boolean connected = false;
 
+    private CardLayout cardLayout;
+    private JPanel mainPanel;
+
     public ClientGUI() {
         setTitle("Forbidden Letter - Client");
-        setSize(700, 500);
+        setSize(750, 550); // زدنا الحجم شوي عشان المساحة الفنية
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
         initComponents();
-        layoutComponents();
+        
+        cardLayout = new CardLayout();
+        mainPanel = new JPanel(cardLayout);
+
+        // بناء شاشة اللوبي (المرتبطة بالتصميم الجديد)
+        JPanel lobbyPanel = new JPanel(new BorderLayout(15, 15));
+        lobbyPanel.setBackground(creamBG);
+        lobbyPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        setupLobbyLayout(lobbyPanel);
+
+        // ربط شاشة البداية
+        StartScreen startScreen = new StartScreen(e -> cardLayout.show(mainPanel, "LOBBY"));
+
+        mainPanel.add(startScreen, "START");
+        mainPanel.add(lobbyPanel, "LOBBY");
+
+        add(mainPanel);
+        cardLayout.show(mainPanel, "START");
+
         registerActions();
     }
 
     private void initComponents() {
         usernameField = new JTextField(15);
+        usernameField.setFont(new Font("Serif", Font.PLAIN, 16));
+        
         connectButton = new JButton("Connect");
+        styleButton(connectButton);
+        
         playButton = new JButton("Play");
+        styleButton(playButton);
         playButton.setEnabled(false);
 
         connectedPlayersModel = new DefaultListModel<>();
         waitingPlayersModel = new DefaultListModel<>();
 
         connectedPlayersList = new JList<>(connectedPlayersModel);
-        waitingPlayersList = new JList<>(waitingPlayersModel);
+        styleList(connectedPlayersList);
 
-        statusArea = new JTextArea();
+        waitingPlayersList = new JList<>(waitingPlayersModel);
+        styleList(waitingPlayersList);
+
+        statusArea = new JTextArea(5, 20);
         statusArea.setEditable(false);
-        statusArea.setLineWrap(true);
-        statusArea.setWrapStyleWord(true);
+        statusArea.setBackground(new Color(255, 255, 250)); // لون ورقي فاتح
+        statusArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
     }
 
-    private void layoutComponents() {
+    // دالة لتنسيق الأزرار بنفس روح StartScreen
+    private void styleButton(JButton btn) {
+        btn.setFont(new Font("Serif", Font.BOLD, 16));
+        btn.setBackground(buttonGreen);
+        btn.setForeground(Color.WHITE);
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createLineBorder(darkNavy, 1));
+    }
+
+    // دالة لتنسيق القوائم
+    private void styleList(JList<String> list) {
+        list.setFont(new Font("Serif", Font.BOLD, 18));
+        list.setBackground(new Color(255, 255, 252));
+        list.setForeground(darkNavy);
+        list.setSelectionBackground(buttonGreen);
+    }
+
+    private void setupLobbyLayout(JPanel lobbyPanel) {
+        // الجزء العلوي: تسجيل الدخول
         JPanel topPanel = new JPanel();
-        topPanel.add(new JLabel("Username:"));
+        topPanel.setBackground(creamBG);
+        JLabel userLabel = new JLabel("Username:");
+        userLabel.setFont(new Font("Serif", Font.BOLD, 18));
+        userLabel.setForeground(darkNavy);
+        topPanel.add(userLabel);
         topPanel.add(usernameField);
         topPanel.add(connectButton);
         topPanel.add(playButton);
 
-        JPanel centerPanel = new JPanel(new GridLayout(1, 2, 10, 10));
+        // الجزء الأوسط: القوائم (بشكل بطاقات فنية)
+        JPanel centerPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        centerPanel.setBackground(creamBG);
 
-        JPanel connectedPanel = new JPanel(new BorderLayout());
-        connectedPanel.setBorder(BorderFactory.createTitledBorder("Connected Players"));
-        connectedPanel.add(new JScrollPane(connectedPlayersList), BorderLayout.CENTER);
+        centerPanel.add(createStyledListPanel("CONNECTED PLAYERS", connectedPlayersList));
+        centerPanel.add(createStyledListPanel("WAITING ROOM", waitingPlayersList));
 
-        JPanel waitingPanel = new JPanel(new BorderLayout());
-        waitingPanel.setBorder(BorderFactory.createTitledBorder("Waiting Room"));
-        waitingPanel.add(new JScrollPane(waitingPlayersList), BorderLayout.CENTER);
-
-        centerPanel.add(connectedPanel);
-        centerPanel.add(waitingPanel);
-
+        // الجزء السفلي: الحالة
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.setBorder(BorderFactory.createTitledBorder("Status"));
+        bottomPanel.setBackground(creamBG);
+        TitledBorder statusBorder = BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(darkNavy), "SYSTEM STATUS");
+        statusBorder.setTitleFont(new Font("Serif", Font.BOLD, 12));
+        bottomPanel.setBorder(statusBorder);
         bottomPanel.add(new JScrollPane(statusArea), BorderLayout.CENTER);
 
-        setLayout(new BorderLayout(10, 10));
-        add(topPanel, BorderLayout.NORTH);
-        add(centerPanel, BorderLayout.CENTER);
-        add(bottomPanel, BorderLayout.SOUTH);
+        lobbyPanel.add(topPanel, BorderLayout.NORTH);
+        lobbyPanel.add(centerPanel, BorderLayout.CENTER);
+        lobbyPanel.add(bottomPanel, BorderLayout.SOUTH);
+    }
+
+    // دالة مساعدة لإنشاء لوحات القوائم بشكل أنيق
+    private JPanel createStyledListPanel(String title, JList<String> list) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(creamBG);
+        TitledBorder border = BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(darkNavy, 2), title);
+        border.setTitleFont(new Font("Serif", Font.BOLD, 14));
+        border.setTitleJustification(TitledBorder.CENTER);
+        panel.setBorder(border);
+        panel.add(new JScrollPane(list), BorderLayout.CENTER);
+        return panel;
     }
 
     private void registerActions() {
@@ -104,34 +169,26 @@ public class ClientGUI extends JFrame {
 
     private void connectToServer() {
         String username = usernameField.getText().trim();
-
         if (username.isEmpty()) {
             appendStatus("Please enter a username first.");
             return;
         }
-
         if (connected) {
             appendStatus("You are already connected.");
             return;
         }
-
         try {
             socket = new Socket(SERVER_IP, SERVER_PORT);
             out = new PrintWriter(socket.getOutputStream(), true);
-
             serverConnection = new ServerConnection(socket, this);
             connectionThread = new Thread(serverConnection);
             connectionThread.start();
-
             out.println("CONNECT:" + username);
-
             connected = true;
             connectButton.setEnabled(false);
             usernameField.setEditable(false);
             playButton.setEnabled(true);
-
             appendStatus("Connected to server successfully.");
-
         } catch (IOException ex) {
             appendStatus("Failed to connect to server: " + ex.getMessage());
         }
@@ -142,7 +199,6 @@ public class ClientGUI extends JFrame {
             appendStatus("You must connect first.");
             return;
         }
-
         out.println("Play:");
         appendStatus("Play request sent.");
     }
@@ -152,7 +208,7 @@ public class ClientGUI extends JFrame {
             connectedPlayersModel.clear();
             for (String player : players) {
                 if (!player.trim().isEmpty()) {
-                    connectedPlayersModel.addElement(player.trim());
+                    connectedPlayersModel.addElement(" • " + player.trim());
                 }
             }
         });
@@ -163,7 +219,7 @@ public class ClientGUI extends JFrame {
             waitingPlayersModel.clear();
             for (String player : players) {
                 if (!player.trim().isEmpty()) {
-                    waitingPlayersModel.addElement(player.trim());
+                    waitingPlayersModel.addElement(" » " + player.trim());
                 }
             }
         });
@@ -171,7 +227,7 @@ public class ClientGUI extends JFrame {
 
     public void appendStatus(String message) {
         SwingUtilities.invokeLater(() -> {
-            statusArea.append(message + "\n");
+            statusArea.append("> " + message + "\n");
         });
     }
 
