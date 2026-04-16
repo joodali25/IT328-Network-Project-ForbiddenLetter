@@ -1,0 +1,191 @@
+import javax.swing.*;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
+public class ConnectScreen extends JPanel {
+    private JTextField usernameField;
+    private JTextField ipField;
+    private JButton connectButton;
+    private Image backgroundImage;
+
+    // الألوان الموحدة المتناسقة مع Vintage Style
+    private final Color charcoalTitle = new Color(45, 45, 48);
+    private final Color startButtonGreen = new Color(90, 130, 135); 
+    private final Color fieldBG = new Color(255, 253, 245);
+    private final Color brownBorder = new Color(101, 67, 33); // لون الحدود البنية
+
+    public ConnectScreen(ActionListener connectAction) {
+        // تحميل صورة الخلفية
+        try {
+            backgroundImage = new ImageIcon("src/background.png").getImage();
+            if (backgroundImage.getWidth(null) == -1) {
+                backgroundImage = new ImageIcon("background.png").getImage();
+            }
+        } catch (Exception e) {
+            System.out.println("Background error in ConnectScreen");
+        }
+
+        // إعداد الـ Layout الرئيسي لضمان التوسط الميت
+        setLayout(new GridBagLayout());
+        setOpaque(false);
+        
+        // لوحة داخلية تجمع العناصر ككتلة واحدة في السنتر
+        JPanel contentPanel = new JPanel(new GridBagLayout());
+        contentPanel.setOpaque(false);
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        // 1. العنوان الرئيسي للمخطوطة
+        JLabel mainHeader = new JLabel("JOIN THE FORBIDDEN GAME");
+        mainHeader.setFont(new Font("Imprint MT Shadow", Font.BOLD, 42));
+        mainHeader.setForeground(charcoalTitle);
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        gbc.insets = new Insets(0, 0, 50, 0); 
+        gbc.anchor = GridBagConstraints.CENTER;
+        contentPanel.add(mainHeader, gbc);
+
+        // إعدادات النصوص الجانبية
+        gbc.gridwidth = 1;
+        
+        JLabel userLabel = new JLabel("USERNAME: ");
+        userLabel.setFont(new Font("Serif", Font.BOLD, 22));
+        userLabel.setForeground(charcoalTitle);
+
+        JLabel ipLabel = new JLabel("SERVER IP: ");
+        ipLabel.setFont(new Font("Serif", Font.BOLD, 22));
+        ipLabel.setForeground(charcoalTitle);
+
+        // 2. حقول الإدخال (طويلة وبحدود بنية فخمة)
+        usernameField = createPremiumField(20);
+        ipField = createPremiumField(20);
+        ipField.setText("localhost");
+
+        // إضافة اليوزرنيم
+        gbc.gridx = 0; gbc.gridy = 1; 
+        gbc.anchor = GridBagConstraints.EAST;
+        gbc.insets = new Insets(10, 0, 15, 15);
+        contentPanel.add(userLabel, gbc);
+        
+        gbc.gridx = 1; 
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(10, 0, 15, 0);
+        contentPanel.add(usernameField, gbc);
+
+        // إضافة الـ IP
+        gbc.gridx = 0; gbc.gridy = 2; 
+        gbc.anchor = GridBagConstraints.EAST;
+        gbc.insets = new Insets(10, 0, 15, 15);
+        contentPanel.add(ipLabel, gbc);
+        
+        gbc.gridx = 1; 
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(10, 0, 15, 0);
+        contentPanel.add(ipField, gbc);
+
+     // 3. زر CONNECT (تعديل الهوفر وتوضيح الأبعاد)
+        connectButton = new JButton("CONNECT") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                if (getModel().isPressed()) g2.translate(1, 1);
+
+                Color darkBorder = new Color(50, 35, 25);
+                Color saturatedGreen = new Color(60, 115, 125); 
+                int arc = 20;
+
+                // ظل ناعم جداً
+                g2.setColor(new Color(30, 30, 30, 40));
+                g2.fillRoundRect(2, 2, getWidth()-4, getHeight()-4, arc, arc);
+
+                // --- التعديل هنا: جعل الهوفر أغمق بدل ما يفتح ---
+                if (getModel().isRollover()) {
+                    g2.setColor(saturatedGreen.darker()); // الهوفر صار أغمق الحين
+                } else {
+                    g2.setColor(saturatedGreen);
+                }
+                
+                g2.fillRoundRect(1, 1, getWidth()-3, getHeight()-3, arc, arc);
+                
+                // حدود نحيفة وحادة
+                g2.setColor(darkBorder);
+                g2.setStroke(new BasicStroke(1.5f));
+                g2.drawRoundRect(1, 1, getWidth()-3, getHeight()-3, arc, arc);
+
+                FontMetrics fm = g2.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+                
+                g2.setColor(Color.WHITE); 
+                g2.drawString(getText(), x, y);
+                g2.dispose();
+            }
+        };
+
+        connectButton.setFont(new Font("Serif", Font.BOLD, 24));
+        connectButton.setForeground(Color.WHITE);
+        connectButton.setBackground(new Color(60, 115, 125));
+        connectButton.setContentAreaFilled(false);
+        connectButton.setBorderPainted(false);
+        connectButton.setFocusPainted(false);
+
+        // (العرض ، الطول)
+        connectButton.setFont(new Font("Serif", Font.BOLD, 24));
+        connectButton.setForeground(Color.WHITE);
+        connectButton.setBackground(startButtonGreen);
+        connectButton.setContentAreaFilled(false);
+        connectButton.setBorderPainted(false);
+        connectButton.setFocusPainted(false);
+        connectButton.setPreferredSize(new Dimension(180, 60));
+        connectButton.addActionListener(connectAction);
+
+        // إضافة Hand Cursor للزر
+        connectButton.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                connectButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            }
+        });
+
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(40, 0, 0, 0); 
+        contentPanel.add(connectButton, gbc);
+
+        // اللمسة السحرية: إضافة اللوحة الداخلية لمنتصف الـ Layout الخارجي بالضبط
+        add(contentPanel, new GridBagConstraints());
+    }
+
+    private JTextField createPremiumField(int cols) {
+        JTextField field = new JTextField(cols);
+        field.setFont(new Font("Serif", Font.PLAIN, 22));
+        field.setBackground(fieldBG);
+        field.setForeground(charcoalTitle);
+        field.setCaretColor(charcoalTitle);
+        
+        // إطار بني غامق فخم مع مسافة داخلية مريحة
+        field.setBorder(new CompoundBorder(
+            new LineBorder(brownBorder, 2), 
+            new EmptyBorder(8, 12, 8, 12)
+        ));
+        return field;
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (backgroundImage != null) {
+            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+        } else {
+            g.setColor(new Color(245, 241, 222));
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+    }
+
+    public String getUsername() { return usernameField.getText().trim(); }
+    public String getIP() { return ipField.getText().trim(); }
+}
