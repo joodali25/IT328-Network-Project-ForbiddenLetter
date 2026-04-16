@@ -1,6 +1,4 @@
 
-package com.mycompany.networkprojectphase1;
-
 /**
  *
  * @author Hanan Alghamdi
