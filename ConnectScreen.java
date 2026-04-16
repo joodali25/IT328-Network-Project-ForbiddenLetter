@@ -13,14 +13,15 @@ public class ConnectScreen extends JPanel {
     private JButton connectButton;
     private Image backgroundImage;
 
-    // الألوان الموحدة المتناسقة مع Vintage Style
-    private final Color charcoalTitle = new Color(45, 45, 48);
-    private final Color startButtonGreen = new Color(90, 130, 135); 
-    private final Color fieldBG = new Color(255, 253, 245);
-    private final Color brownBorder = new Color(101, 67, 33); // لون الحدود البنية
+    // Theme Colors (Vintage Palette)
+    private final Color charcoalTitle = new Color(35, 30, 25); // Dark title color
+    private final Color buttonGreen = new Color(85, 107, 47);   // Olive Green
+    private final Color buttonHover = new Color(65, 82, 36);   // Darker Olive for hover
+    private final Color fieldBG = new Color(255, 253, 245);    // Creamy white for input fields
+    private final Color brownBorder = new Color(101, 67, 33);  // Classic brown border
 
     public ConnectScreen(ActionListener connectAction) {
-        // تحميل صورة الخلفية
+        // Load the background image
         try {
             backgroundImage = new ImageIcon("src/background.png").getImage();
             if (backgroundImage.getWidth(null) == -1) {
@@ -30,16 +31,16 @@ public class ConnectScreen extends JPanel {
             System.out.println("Background error in ConnectScreen");
         }
 
-        // إعداد الـ Layout الرئيسي لضمان التوسط الميت
+        // Use GridBagLayout to center all components perfectly
         setLayout(new GridBagLayout());
         setOpaque(false);
         
-        // لوحة داخلية تجمع العناصر ككتلة واحدة في السنتر
+        // Inner panel to group elements together
         JPanel contentPanel = new JPanel(new GridBagLayout());
         contentPanel.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
 
-        // 1. العنوان الرئيسي للمخطوطة
+        // 1. Header Title
         JLabel mainHeader = new JLabel("JOIN THE FORBIDDEN GAME");
         mainHeader.setFont(new Font("Imprint MT Shadow", Font.BOLD, 42));
         mainHeader.setForeground(charcoalTitle);
@@ -48,7 +49,7 @@ public class ConnectScreen extends JPanel {
         gbc.anchor = GridBagConstraints.CENTER;
         contentPanel.add(mainHeader, gbc);
 
-        // إعدادات النصوص الجانبية
+        // Labels for Input Fields
         gbc.gridwidth = 1;
         
         JLabel userLabel = new JLabel("USERNAME: ");
@@ -59,12 +60,12 @@ public class ConnectScreen extends JPanel {
         ipLabel.setFont(new Font("Serif", Font.BOLD, 22));
         ipLabel.setForeground(charcoalTitle);
 
-        // 2. حقول الإدخال (طويلة وبحدود بنية فخمة)
+        // 2. Input Fields Initialization
         usernameField = createPremiumField(20);
         ipField = createPremiumField(20);
         ipField.setText("localhost");
 
-        // إضافة اليوزرنيم
+        // Layout: Username Row
         gbc.gridx = 0; gbc.gridy = 1; 
         gbc.anchor = GridBagConstraints.EAST;
         gbc.insets = new Insets(10, 0, 15, 15);
@@ -75,7 +76,7 @@ public class ConnectScreen extends JPanel {
         gbc.insets = new Insets(10, 0, 15, 0);
         contentPanel.add(usernameField, gbc);
 
-        // إضافة الـ IP
+        // Layout: Server IP Row
         gbc.gridx = 0; gbc.gridy = 2; 
         gbc.anchor = GridBagConstraints.EAST;
         gbc.insets = new Insets(10, 0, 15, 15);
@@ -86,37 +87,36 @@ public class ConnectScreen extends JPanel {
         gbc.insets = new Insets(10, 0, 15, 0);
         contentPanel.add(ipField, gbc);
 
-     // 3. زر CONNECT (تعديل الهوفر وتوضيح الأبعاد)
+        // 3. Custom Styled CONNECT Button
         connectButton = new JButton("CONNECT") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
+                // Add click effect (slight translation)
                 if (getModel().isPressed()) g2.translate(1, 1);
 
-                Color darkBorder = new Color(50, 35, 25);
-                Color saturatedGreen = new Color(60, 115, 125); 
                 int arc = 20;
 
-                // ظل ناعم جداً
+                // Draw Button Shadow
                 g2.setColor(new Color(30, 30, 30, 40));
                 g2.fillRoundRect(2, 2, getWidth()-4, getHeight()-4, arc, arc);
 
-                // --- التعديل هنا: جعل الهوفر أغمق بدل ما يفتح ---
+                // Switch color based on Mouse Hover (Rollover)
                 if (getModel().isRollover()) {
-                    g2.setColor(saturatedGreen.darker()); // الهوفر صار أغمق الحين
+                    g2.setColor(buttonHover); 
                 } else {
-                    g2.setColor(saturatedGreen);
+                    g2.setColor(buttonGreen);
                 }
-                
                 g2.fillRoundRect(1, 1, getWidth()-3, getHeight()-3, arc, arc);
                 
-                // حدود نحيفة وحادة
-                g2.setColor(darkBorder);
+                // Draw Button Border
+                g2.setColor(new Color(50, 35, 25));
                 g2.setStroke(new BasicStroke(1.5f));
                 g2.drawRoundRect(1, 1, getWidth()-3, getHeight()-3, arc, arc);
 
+                // Center the text inside the button
                 FontMetrics fm = g2.getFontMetrics();
                 int x = (getWidth() - fm.stringWidth(getText())) / 2;
                 int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
@@ -127,24 +127,16 @@ public class ConnectScreen extends JPanel {
             }
         };
 
+        // Button Properties
         connectButton.setFont(new Font("Serif", Font.BOLD, 24));
         connectButton.setForeground(Color.WHITE);
-        connectButton.setBackground(new Color(60, 115, 125));
-        connectButton.setContentAreaFilled(false);
-        connectButton.setBorderPainted(false);
-        connectButton.setFocusPainted(false);
-
-        // (العرض ، الطول)
-        connectButton.setFont(new Font("Serif", Font.BOLD, 24));
-        connectButton.setForeground(Color.WHITE);
-        connectButton.setBackground(startButtonGreen);
-        connectButton.setContentAreaFilled(false);
-        connectButton.setBorderPainted(false);
-        connectButton.setFocusPainted(false);
         connectButton.setPreferredSize(new Dimension(180, 60));
+        connectButton.setContentAreaFilled(false);
+        connectButton.setBorderPainted(false);
+        connectButton.setFocusPainted(false);
         connectButton.addActionListener(connectAction);
 
-        // إضافة Hand Cursor للزر
+        // Change cursor to HAND when hovering over the button
         connectButton.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
                 connectButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -156,10 +148,11 @@ public class ConnectScreen extends JPanel {
         gbc.insets = new Insets(40, 0, 0, 0); 
         contentPanel.add(connectButton, gbc);
 
-        // اللمسة السحرية: إضافة اللوحة الداخلية لمنتصف الـ Layout الخارجي بالضبط
+        // Center the entire content panel on the screen
         add(contentPanel, new GridBagConstraints());
     }
 
+    // Helper method to create styled text fields
     private JTextField createPremiumField(int cols) {
         JTextField field = new JTextField(cols);
         field.setFont(new Font("Serif", Font.PLAIN, 22));
@@ -167,7 +160,7 @@ public class ConnectScreen extends JPanel {
         field.setForeground(charcoalTitle);
         field.setCaretColor(charcoalTitle);
         
-        // إطار بني غامق فخم مع مسافة داخلية مريحة
+        // Brown border with inner padding for better look
         field.setBorder(new CompoundBorder(
             new LineBorder(brownBorder, 2), 
             new EmptyBorder(8, 12, 8, 12)
@@ -178,6 +171,7 @@ public class ConnectScreen extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        // Draw background image if available
         if (backgroundImage != null) {
             g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
         } else {
@@ -186,6 +180,7 @@ public class ConnectScreen extends JPanel {
         }
     }
 
+    // Getters to retrieve user input
     public String getUsername() { return usernameField.getText().trim(); }
     public String getIP() { return ipField.getText().trim(); }
 }
