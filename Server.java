@@ -1,7 +1,3 @@
-
-package com.mycompany.networkprojectphase1;
-
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -27,15 +23,33 @@ public class Server {
         }
     }
 
-    public static synchronized void addToWaitingRoom(String playerName) {
+    public static synchronized void AddToWaitingRoom(String playerName) {
+        // منع دخول أي شخص إضافي إذا وصلنا لـ 4
+        if (waitingRoom.size() >= 4) {
+            updateAllClients(); // لإرسال حالة "ممتلئ" للجميع
+            return;
+        }
+
         if (!waitingRoom.contains(playerName)) {
             waitingRoom.add(playerName);
-            System.out.println(playerName + " joined waiting room");
             updateAllClients();
+
+            if (waitingRoom.size() == 4) {
+                startGame();
+            }
         }
     }
+    private static void startGame() {
+        for (NewClient client : clients) {
+            client.sendMessage("GAME_START");
+        }
+    }
+    
+    public static synchronized int getWaitingCount() {
+        return waitingRoom.size();
+    }
 
-    public static synchronized void addConnectedPlayer(String playerName) {
+    public static synchronized void AddConnectedPlayer(String playerName) {
         if (!connectedPlayers.contains(playerName)) {
             connectedPlayers.add(playerName);
             System.out.println("CONNECTED: " + playerName);
