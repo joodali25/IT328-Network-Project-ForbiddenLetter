@@ -1,14 +1,14 @@
-import java.util.HashSet;
+import java.util.HashSet; // save words without repetion 
 
 public class WordValidator {
-
+// check the word if the ruls apply 
     public ValidationResult validate(String word, LevelConfig level, HashSet<String> usedWordsThisLevel) {
-        if (word == null || word.trim().isEmpty()) {
-            return new ValidationResult(false, "INVALID_WORD:Word cannot be empty");
+        if (word == null || word.trim().isEmpty()) { // if the word empty or its blanks
+            return new ValidationResult(false, "INVALID_WORD:Word cannot be empty"); 
         }
 
-        word = word.trim().toLowerCase();
-
+        word = word.trim().toLowerCase(); //trim to remove spaces ,and make is lower case
+// unrepeated word 
         if (usedWordsThisLevel.contains(word)) {
             return new ValidationResult(false, "INVALID_WORD:Word already used in this level");
         }
