@@ -12,6 +12,7 @@ import java.util.List;
 public class WaitingRoomScreen extends JPanel {
     private List<String> currentPlayers = new ArrayList<>();
     private JLabel statusLabel;
+    private JLabel timerLabel;  // for timer
     
     // Theme Colors
     private final Color offWhite = new Color(245, 241, 222); 
@@ -22,6 +23,11 @@ public class WaitingRoomScreen extends JPanel {
     private int animationOffset = 0; 
     private double angle = 0; // Angle used for smooth sine-wave floating effect
     private Timer animationTimer;
+
+    // Timer Variables
+    private Timer countdownTimer;
+    private int remainingSeconds = 0;
+    private boolean isCountdownActive = false;
 
     public WaitingRoomScreen() {
         setLayout(new BorderLayout());
@@ -36,13 +42,26 @@ public class WaitingRoomScreen extends JPanel {
         } catch (Exception e) {
             System.out.println("Background error in WaitingRoom");
         }
+        
+        // 1. Header Title + timer 
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(60, 0, 0, 0));
 
-        // 1. Header Title
+        
         JLabel title = new JLabel("Waiting Room", JLabel.CENTER);
         title.setFont(new Font("Serif", Font.BOLD, 48));
         title.setForeground(offWhite); 
-        title.setBorder(BorderFactory.createEmptyBorder(60, 0, 0, 0)); 
-        add(title, BorderLayout.NORTH);
+       
+        //
+        timerLabel = new JLabel("", JLabel.CENTER);
+        timerLabel.setFont(new Font("Monospaced", Font.BOLD, 45));
+        timerLabel.setForeground(new Color(255, 100, 100));
+        timerLabel.setVisible(false);
+        
+        headerPanel.add(title, BorderLayout.CENTER);
+        headerPanel.add(timerLabel, BorderLayout.SOUTH);
+        add(headerPanel, BorderLayout.NORTH);
 
         // 2. Center Panel: The drawing area for the table and players
         JPanel gameTablePanel = new JPanel() {
@@ -74,14 +93,102 @@ public class WaitingRoomScreen extends JPanel {
     // Updates the list of players and changes UI style if the room is full.
     public void updateWaitingPlayers(List<String> players) {
         this.currentPlayers = players;
+        
+        if (players.size() == 2 && !isCountdownActive) {
+            // starting timer when the second player join
+            startCountdown(30);
+        }
+        
         if (players.size() == 4) {
+            // stop timer if number of player is complet
+            stopCountdown();
             statusLabel.setFont(new Font("Serif", Font.BOLD | Font.ITALIC, 28));
             statusLabel.setForeground(new Color(255, 223, 128)); // Golden color
             statusLabel.setText("Room is full! Starting the game...");
+            timerLabel.setVisible(false);
+            // if player less than 2 head the timer
+        } else if (players.size() < 2) {
+            stopCountdown();
+            timerLabel.setVisible(false);
+            statusLabel.setText("Waiting for more players...");
         }
+        
         repaint();
     }
-
+    
+    private void startCountdown(int seconds) {
+        stopCountdown();
+        
+        remainingSeconds = seconds;
+        isCountdownActive = true;
+        
+        
+        timerLabel.setText(String.valueOf(remainingSeconds));
+        timerLabel.setForeground(offWhite); 
+        timerLabel.setVisible(true);
+        
+        countdownTimer = new Timer(1000, e -> {
+            if (remainingSeconds > 0 && isCountdownActive) {
+                remainingSeconds--;
+                timerLabel.setText(String.valueOf(remainingSeconds));
+                // color cheinging in last 3 second
+                if (remainingSeconds <= 3 && remainingSeconds > 0) {
+                    timerLabel.setForeground(Color.RED);
+                    
+                    timerLabel.setFont(new Font("Serif", Font.BOLD, 56));
+                } else if (remainingSeconds > 3) {
+                    timerLabel.setForeground(offWhite); 
+                    timerLabel.setFont(new Font("Serif", Font.BOLD, 48)); 
+                }
+                
+            } else if (remainingSeconds == 0 && isCountdownActive) {
+                                stopCountdown();
+                timerLabel.setText("START!");
+                timerLabel.setForeground(new Color(100, 255, 100)); 
+                statusLabel.setText("Time's up! Starting the game...");
+                
+                new Timer(2000, evt -> {
+                    timerLabel.setVisible(false);
+                    ((Timer)evt.getSource()).stop();
+                }).start();
+                
+                // هنا يمكن إضافة استدعاء لبدء اللعبة
+                // onCountdownFinished();
+            }
+        });
+        countdownTimer.start();
+    }
+    
+    // إيقاف العداد التنازلي
+    private void stopCountdown() {
+        if (countdownTimer != null) {
+            countdownTimer.stop();
+            countdownTimer = null;
+        }
+        isCountdownActive = false;
+    }
+    
+    public void resetCountdown() {
+        stopCountdown();
+        remainingSeconds = 0;
+        timerLabel.setVisible(false);
+        timerLabel.setText("");
+        statusLabel.setFont(new Font("Serif", Font.ITALIC, 20));
+        statusLabel.setForeground(darkOffWhite);
+        statusLabel.setText("Waiting for players...");
+    }
+    
+    public void onGameStarted() {
+        stopCountdown();
+        timerLabel.setText("STARTED!");
+        timerLabel.setForeground(new Color(100, 255, 100));
+        statusLabel.setText("Game is starting...");
+        // يمكن إخفاء العداد بعد ثانيتين
+        new Timer(2000, e -> {
+            timerLabel.setVisible(false);
+            ((Timer)e.getSource()).stop();
+        }).start();
+    }
     // Draws the wooden table and divides it into 4 slots.
     private void drawWaitingArea(Graphics2D g2d, int width, int height) {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
