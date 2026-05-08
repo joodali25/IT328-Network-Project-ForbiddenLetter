@@ -1,3 +1,5 @@
+package com.mycompany.networkpro2;
+
 public class ValidationResult {
     private boolean valid; // if the world valid 
     private String message; // if its wromg or right send a message
