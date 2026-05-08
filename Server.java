@@ -2,15 +2,15 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-private static GameLogic gameLogic = new GameLogic();
-private static java.util.Timer waitingTimer;
-private static java.util.Timer gameTimer;
-private static java.util.Timer levelTimer;
-
 /*
  * The main Server class that manages all connected players and the game logic.
  */
 public class Server {
+    private static GameLogic gameLogic = new GameLogic();
+    private static java.util.Timer waitingTimer;
+    private static java.util.Timer gameTimer;
+    private static java.util.Timer levelTimer;
+    
     // Lists to keep track of clients and game states
     private static ArrayList<NewClient> clients = new ArrayList<>();
     private static ArrayList<String> connectedPlayers = new ArrayList<>();
@@ -150,7 +150,7 @@ public static synchronized void submitWord(String playerName, String word, NewCl
         if (levelTimer != null) levelTimer.cancel();
 
         broadcast("WINNER:" + playerName);
-        broadcast("WINNER_LIST:" + playerName);
+        broadcast(gameLogic.getWinnerListMessage());
         return;
     }
 
@@ -165,7 +165,7 @@ public static synchronized void submitWord(String playerName, String word, NewCl
     }
 }
 
-public static synchronized void removePlayerFromGame(String playerName) {
+    public static synchronized void removePlayerFromGame(String playerName) {
     connectedPlayers.remove(playerName);
     waitingRoom.remove(playerName);
     gameLogic.removePlayer(playerName);
@@ -181,22 +181,16 @@ public static synchronized void removePlayerFromGame(String playerName) {
         if (levelTimer != null) levelTimer.cancel();
 
         broadcast("NO_WINNER:Only one player left");
-    }
-}
-
-private static void broadcast(String message) {
-    for (NewClient client : clients) {
-        client.sendMessage(message);
-    }
-}
-
-    // Informs all clients that the game has officially started.
-    private static void startGame() {
-        for (NewClient client : clients) {
-            client.sendMessage("GAME_START");
+          }
         }
-    }
-    
+
+        private static void broadcast(String message) {
+        for (NewClient client : clients) {
+        client.sendMessage(message);
+          }
+         }
+
+  
     public static synchronized int getWaitingCount() {
         return waitingRoom.size();
     }
@@ -229,5 +223,6 @@ private static void broadcast(String message) {
             client.sendMessage(connected);
             client.sendMessage(players);
         }
-    }
-}
+        
+    }//end synchronized
+}//end class
