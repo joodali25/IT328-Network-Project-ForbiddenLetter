@@ -65,5 +65,38 @@ public class ServerConnection implements Runnable {
                     gui.handleConnectionError(message.substring(6))
             );
         }
-    }
-}
+        else if (message.startsWith("SCORES:")) {
+             SwingUtilities.invokeLater(() ->
+                   gui.appendStatus("Scores updated: " + message.substring(7))
+            );
+        }
+
+       else if (message.startsWith("WINNER:")) {
+            SwingUtilities.invokeLater(() ->
+                JOptionPane.showMessageDialog(null,
+                    "Winner is: " + message.substring(7),
+                    "Game Ended",
+                    JOptionPane.INFORMATION_MESSAGE)
+             );
+        }
+
+      else if (message.startsWith("WINNER_LIST:")) {
+           SwingUtilities.invokeLater(() ->
+            JOptionPane.showMessageDialog(null,
+                    "Final Scores:\n" + message.substring(12).replace(",", "\n"),
+                    "Winner List",
+                    JOptionPane.INFORMATION_MESSAGE)
+             );
+         }
+
+      else if (message.startsWith("NO_WINNER:")) {
+           SwingUtilities.invokeLater(() ->
+            JOptionPane.showMessageDialog(null,
+                    message.substring(10),
+                    "No Winner",
+                    JOptionPane.INFORMATION_MESSAGE)
+             );
+         }
+        
+    }//method end
+}//class end
