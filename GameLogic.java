@@ -103,14 +103,20 @@ public class GameLogic {
     }
 
     public String getScoresMessage() {
-        StringBuilder sb = new StringBuilder("SCORES:");
+    StringBuilder sb = new StringBuilder("SCORES:");
 
-        for (String player : scores.keySet()) {
-            sb.append(player).append("=").append(scores.get(player)).append(",");
+    int count = 0;
+    for (String player : scores.keySet()) {
+        sb.append(player).append("=").append(scores.get(player));
+        count++;
+
+        if (count < scores.size()) {
+            sb.append(",");
         }
-
-        return sb.toString();
     }
+
+    return sb.toString();
+}
 
     public void removePlayer(String playerName) {
         scores.remove(playerName);
@@ -123,4 +129,25 @@ public class GameLogic {
     public void endGame() {
         gameRunning = false;
     }
+    
+    public String getWinnerListMessage() {
+    StringBuilder sb = new StringBuilder("WINNER_LIST:");
+
+    scores.entrySet()
+            .stream()
+            .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+            .forEach(entry -> {
+                sb.append(entry.getKey())
+                  .append("=")
+                  .append(entry.getValue())
+                  .append(",");
+            });
+
+    if (sb.charAt(sb.length() - 1) == ',') {
+        sb.deleteCharAt(sb.length() - 1);
+    }
+
+    return sb.toString();
 }
+    
+}//class end
