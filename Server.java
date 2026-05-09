@@ -145,7 +145,7 @@ public class Server {
                             broadcastToGame("NO_WINNER:Time's up! No player reached target score.");
                         }
                     } else {
-                        // Send second-by-second countdown updates to the UI
+                        // Send second-by-second countdown updates to the client UI
                         broadcastToGame("TIMER_UPDATE:" + timeLeft[0]);
                         timeLeft[0]--;
                     }
@@ -200,7 +200,7 @@ public class Server {
         
         // 1. Check for a definitive winner (reached target score)
         if (gameLogic.hasWinner(playerName)) {
-            // stopGame will handle notifying all clients and cleaning up state
+            // stopGame will handle notifying all clients and cleaning up state once
             stopGame("WINNER:" + playerName); 
             return;
         }
@@ -228,23 +228,28 @@ public class Server {
 
     /**
      * Removes a player from all tracking lists and handles game termination if too few players remain.
+     * Includes a broadcast to inform other players in the game session.
      * @param playerName The name of the player to be removed.
      */
     public static synchronized void removePlayerFromGame(String playerName) {
+        // 1. Send notification first while the player is still in the list to ensure others receive it
+        if (gameLogic.isGameRunning()) {
+            broadcastToGame("INFO: " + playerName + " has left the game.");
+        }
+
+        // 2. Perform the actual removal from lists
         connectedPlayers.remove(playerName);
         waitingRoom.remove(playerName);
         gameLogic.removePlayer(playerName);
 
-        // Stop the waiting timer if the room drops below the minimum required players
+        // 3. Manage timer and termination logic if necessary
         if (waitingRoom.size() < 2) {
             if (waitingTimer != null) {
                 waitingTimer.cancel();
                 waitingTimer = null;
-                System.out.println("Waiting Timer stopped: Not enough players.");
             }
         }
 
-        // End the game session if there are not enough active players left
         if (gameLogic.isGameRunning() && gameLogic.getActivePlayerCount() <= 1) {
             stopGame("NO_WINNER:Only one player left. Game ended.");
         }
@@ -265,7 +270,7 @@ public class Server {
     }
 
     /**
-     * Sends a message to every single connected client, regardless of their game state.
+     * Sends a message to every single connected client, regardless of their state.
      * @param message The string message to broadcast.
      */
     private static void broadcast(String message) {
@@ -304,13 +309,13 @@ public class Server {
 
     /**
      * Broadcasts the updated lists of connected players and waiting room status to everyone.
-     * Also updates the play button status (enabled/disabled) for all clients.
+     * Disables/Enables the play button for all clients based on game state.
      */
     public static synchronized void updateAllClients() {
         String players = "WAITING:" + String.join(",", waitingRoom);
         String connected = "PLAYERS:" + String.join(",", connectedPlayers);
         
-        // Button should be disabled if game is running or room is at max capacity
+        // Button should be disabled if game is running or room is at max capacity (4 players)
         boolean shouldDisable = gameLogic.isGameRunning() || waitingRoom.size() >= 4;
         String playStatus = shouldDisable ? "DISABLE_PLAY" : "ENABLE_PLAY";
 
