@@ -3,8 +3,9 @@ import javax.swing.border.*;
 import java.awt.*;
 import java.util.List;
 
-/*
+/**
  * The Lobby screen where players can see who is online and check the game status.
+ * It features a vintage-themed design consistent with the game's aesthetic.
  */
 public class LobbyScreen extends JPanel {
     private DefaultListModel<String> connectedPlayersModel;
@@ -19,7 +20,12 @@ public class LobbyScreen extends JPanel {
     private final Color sageGreen = new Color(85, 107, 47);       // Muted olive for buttons
     private final Color buttonHover = new Color(65, 82, 36);      // Darker olive for hover effect
     private final Color brownBorder = new Color(101, 67, 33);     // Deep brown for borders
+    private boolean gameInProgress = false; // Tracks if a game session is active globally
 
+    /**
+     * Constructs the LobbyScreen and loads visual assets.
+     * @param playAction Action listener for the Play button.
+     */
     public LobbyScreen(java.awt.event.ActionListener playAction) {
         // Load the main background image
         try {
@@ -40,6 +46,9 @@ public class LobbyScreen extends JPanel {
         setupLayout();
     }
 
+    /**
+     * Initializes UI components including the player list model, buttons, and status area.
+     */
     private void initComponents(java.awt.event.ActionListener playAction) {
         connectedPlayersModel = new DefaultListModel<>();
         
@@ -59,6 +68,9 @@ public class LobbyScreen extends JPanel {
         statusArea.setFont(new Font("Serif", Font.BOLD, 18));
     }
 
+    /**
+     * Arranges the initialized components into the specified layout sections.
+     */
     private void setupLayout() {
         // 1. Header Title
         JLabel title = new JLabel("GAME LOBBY", JLabel.CENTER);
@@ -92,6 +104,7 @@ public class LobbyScreen extends JPanel {
 
     /**
      * Updates the main list of all players currently connected to the server.
+     * @param players List of player names to display.
      */
     public void updateConnected(List<String> players) {
         connectedPlayersModel.clear();
@@ -101,7 +114,10 @@ public class LobbyScreen extends JPanel {
     }
 
     /**
-     * Updates the text area with the latest waiting room information (Names & Count).
+     * Updates the text area with the latest waiting room information.
+     * Ensures the Play button status is synced with the current game state.
+     * @param waitingPlayers List of players currently in the waiting room.
+     * @param myName The current user's name.
      */
     public void updateLobbyStatus(List<String> waitingPlayers, String myName) {
         int total = waitingPlayers.size();
@@ -112,14 +128,31 @@ public class LobbyScreen extends JPanel {
 
         if (total == 0) {
             statusArea.setText("STATUS: Waiting Room is empty [0/4].\nBe the first to join!");
-            playButton.setText("PLAY");
-            playButton.setEnabled(true);
+            
+            // Sync play button state with global game progress
+            if (!gameInProgress) {
+                playButton.setText("PLAY");
+                playButton.setEnabled(true);
+            } else {
+                playButton.setText("IN GAME");
+                playButton.setEnabled(false);
+            }
+            
         } else if (total < 4) {
             String names = String.join(", ", waitingPlayers);
             statusArea.setText("STATUS: Waiting Room [ " + total + " / 4 ].\nInside: " + names);
-            playButton.setText("PLAY");
-            playButton.setEnabled(true);
+            
+            // Sync play button state with global game progress
+            if (!gameInProgress) {
+                playButton.setText("PLAY");
+                playButton.setEnabled(true);
+            } else {
+                playButton.setText("IN GAME");
+                playButton.setEnabled(false);
+            }
+            
         } else {
+            // Case where the room is full (4 players reached)
             String names = String.join(", ", waitingPlayers);
             statusArea.setText("STATUS: Room is FULL [4/4].\nPlaying now: " + names);
             playButton.setText("FULL");
@@ -133,6 +166,9 @@ public class LobbyScreen extends JPanel {
 
     /**
      * Helper method to create a consistent styled card for UI sections.
+     * @param title Title of the card.
+     * @param comp Component to be placed inside the card.
+     * @return Styled JPanel container.
      */
     private JPanel createCard(String title, Component comp) {
         JPanel p = new JPanel(new BorderLayout());
@@ -166,6 +202,9 @@ public class LobbyScreen extends JPanel {
 
     /**
      * Custom painting for the button to include shadows, rounded corners, and hover effects.
+     * @param text Button label text.
+     * @param enabled Initial enabled state.
+     * @return A styled JButton.
      */
     private JButton createPremiumButton(String text, boolean enabled) {
         JButton btn = new JButton(text) {
@@ -215,6 +254,9 @@ public class LobbyScreen extends JPanel {
         return btn;
     }
 
+    /**
+     * Renders the background image if available.
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g); 
@@ -222,6 +264,23 @@ public class LobbyScreen extends JPanel {
             g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
     }
 
+    /**
+     * Updates the status area with a specific message.
+     * @param msg The message string.
+     */
     public void appendStatus(String msg) { statusArea.setText("Status: " + msg); }
-    public void disablePlayButton() { playButton.setEnabled(false); }
+
+    /**
+     * Controls the interactive state of the Play button and updates the internal game progress flag.
+     * @param enabled True to enable the button, false to indicate game is in progress.
+     */
+    public void setPlayButtonEnabled(boolean enabled) {
+        this.gameInProgress = !enabled; // If disabled, it implies a game is currently in progress
+        playButton.setEnabled(enabled);
+        if (!enabled) {
+            playButton.setToolTipText("Game is already in progress...");
+        } else {
+            playButton.setToolTipText(null);
+        }
+    }
 }
