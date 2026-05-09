@@ -31,8 +31,9 @@ public class GameLogic {
                         new String[]{"cat", "dog", "lion", "wolf", "goat", "duck"}),
 
                 // Level 3: Two forbidden letters
-                new LevelConfig(3, "Countries", new char[]{'a', 'i'}, 0, 0,
-                        new String[]{"peru", "egypt", "chile", "oman", "qtr"}),
+              new LevelConfig(3, "Countries", new char[]{'a', 'i'}, 0, 0,
+                        new String[]{"peru", "egypt", "Greece", "Morocco", "Yemen"}),
+
 
                 // Level 4: One forbidden letter + word length rule
                 new LevelConfig(4, "School", new char[]{'o'}, 6, 0,
