@@ -39,8 +39,7 @@ public class Server {
     }
 
     /**
-     * Adds a player to the waiting room. 
-     * Starts the waiting timer if 2 players join, or starts the game if 4 players are reached.
+     * Adds a player to the waiting room and starts the game if specific conditions are met.
      * @param playerName The name of the player joining the room.
      */
     public static synchronized void AddToWaitingRoom(String playerName) {
@@ -53,10 +52,12 @@ public class Server {
             waitingRoom.add(playerName);
             updateAllClients();
 
+            // Start countdown when 2 players are present
             if (waitingRoom.size() == 2) {
                 startWaitingTimer();
             }
 
+            // Immediately start game when room is full (4 players)
             if (waitingRoom.size() == 4) {
                 startGame();
             }
@@ -64,7 +65,7 @@ public class Server {
     }
 
     /**
-     * Starts a 30-second countdown once the minimum number of players (2) is met.
+     * Initializes a 30-second timer to start the game if at least 2 players stay in the room.
      */
     private static void startWaitingTimer() {
         if (waitingTimer != null) return;
@@ -84,7 +85,7 @@ public class Server {
 
     /**
      * Transitions from waiting phase to active gameplay.
-     * Cancels the waiting timer and broadcasts initial game signals to participants.
+     * Cancels the waiting timer and broadcasts game start signals to participants.
      */
     private static void startGame() {
         if (waitingTimer != null) {
@@ -95,7 +96,7 @@ public class Server {
         gameLogic.startGame(waitingRoom);
         updateAllClients();
         
-        // Broadcast game start and level data only to participants
+        // Broadcast game signals to room participants only
         broadcastToGame("GAME_START"); 
         broadcastToGame(gameLogic.getCurrentLevelMessage());
         broadcastToGame(gameLogic.getScoresMessage());
@@ -105,8 +106,8 @@ public class Server {
     }
 
     /**
-     * Manages a countdown timer for the current level.
-     * Handles level transitions and notifies clients of time updates.
+     * Manages a dedicated countdown timer for the current level.
+     * Handles level transitions or game termination upon timeout.
      */
     private static void startLevelTimerIfNeeded() {
         if (levelTimer != null) {
@@ -119,7 +120,7 @@ public class Server {
         if (seconds <= 0) return;
 
         levelTimer = new java.util.Timer();
-        // Array to hold the remaining time inside the timer task
+        // Array to store the remaining time inside the timer task
         final int[] timeLeft = {seconds}; 
 
         levelTimer.scheduleAtFixedRate(new java.util.TimerTask() {
@@ -143,17 +144,17 @@ public class Server {
                             broadcastToGame("NO_WINNER:Time's up! No player reached target score.");
                         }
                     } else {
-                        // Send countdown updates to the UI
+                        // Send timer updates to the participant UI
                         broadcastToGame("TIMER_UPDATE:" + timeLeft[0]);
                         timeLeft[0]--;
                     }
                 }
             }
-        }, 0, 1000); // Update every 1000ms
+        }, 0, 1000); // Update every 1000ms (1 second)
     }
 
     /**
-     * Manages the overall game session timer, fixed at 7 minutes.
+     * Manages the overall game session timer (fixed at 7 minutes).
      */
     private static void startGameTimer() {
         if (gameTimer != null) gameTimer.cancel();
@@ -172,7 +173,7 @@ public class Server {
                     int secs = totalSeconds[0] % 60;
                     String timeStr = String.format("%02d:%02d", mins, secs);
                     
-                    // Broadcast session timer updates to players
+                    // Broadcast session timer updates
                     broadcastToGame("TOTAL_TIMER_UPDATE:" + timeStr);
                     totalSeconds[0]--;
                 }
@@ -181,11 +182,10 @@ public class Server {
     }
 
     /**
-     * Processes word submissions from players.
-     * Updates scores, checks for winners, and handles level progression.
-     * @param playerName Name of the player submitting.
-     * @param word The word string.
-     * @param sender The client handler thread.
+     * Handles word submissions from players, updates scores, and checks win conditions.
+     * @param playerName Name of the submitting player.
+     * @param word The word string submitted.
+     * @param sender The specific client thread.
      */
     public static synchronized void submitWord(String playerName, String word, NewClient sender) {
         ValidationResult result = gameLogic.submitWord(playerName, word);
@@ -195,9 +195,9 @@ public class Server {
 
         broadcastToGame(gameLogic.getScoresMessage());
         
-        // 1. Check if the player reached the target score
+        // 1. Handle case where a player reaches the target score
         if (gameLogic.hasWinner(playerName)) {
-            // Stop the game and notify everyone
+            // stopGame handles notifying everyone once
             stopGame("WINNER:" + playerName); 
             return;
         }
@@ -208,13 +208,13 @@ public class Server {
             broadcastToGame(gameLogic.getCurrentLevelMessage());
             startLevelTimerIfNeeded();
         } else {
-            // 2. All levels completed (find the highest scorer)
+            // 2. Handle end of all levels (find highest scorer)
             gameLogic.endGame();
             if (gameTimer != null) gameTimer.cancel();
             if (levelTimer != null) levelTimer.cancel();
 
             String winnerList = gameLogic.getWinnerListMessage();
-            // Extract the first player (top scorer)
+            // Extract the top scorer from the winner list
             String topEntry = winnerList.substring(12).split(",")[0]; 
             String topPlayer = topEntry.split("=")[0];
 
@@ -223,22 +223,21 @@ public class Server {
     }
 
     /**
-     * Removes a player from the game session and informs other participants.
-     * Ends the game if only one player remains.
-     * @param playerName Name of the player to remove.
+     * Removes a player from the game session and manages game termination if needed.
+     * @param playerName The name of the player to remove.
      */
     public static synchronized void removePlayerFromGame(String playerName) {
-        // 1. Send departure info while player is still tracked to ensure message delivery
+        // 1. Broadcast info while player is still tracked to ensure delivery
         if (gameLogic.isGameRunning()) {
             broadcastToGame("INFO: " + playerName + " has left the game.");
         }
 
-        // 2. Perform cleanup and removal
+        // 2. Perform removal operations
         connectedPlayers.remove(playerName);
         waitingRoom.remove(playerName);
         gameLogic.removePlayer(playerName);
 
-        // 3. Manage timers and termination logic
+        // 3. Manage timers and game session viability
         if (waitingRoom.size() < 2) {
             if (waitingTimer != null) {
                 waitingTimer.cancel();
@@ -254,7 +253,7 @@ public class Server {
     }
 
     /**
-     * Sends a message only to players currently inside the game room.
+     * Sends a message specifically to players currently in the active game/waiting room.
      * @param message The message to broadcast.
      */
     private static void broadcastToGame(String message) {
@@ -276,15 +275,15 @@ public class Server {
     }
 
     /**
-     * @return The number of players currently in the waiting room.
+     * @return The current number of players in the waiting room.
      */
     public static synchronized int getWaitingCount() {
         return waitingRoom.size();
     }
 
     /**
-     * Registers a player as 'Connected' in the global lobby.
-     * @param playerName The name to add.
+     * Registers a player as 'Connected' in the Lobby.
+     * @param playerName Name of the connecting player.
      */
     public static synchronized void AddConnectedPlayer(String playerName) {
         if (!connectedPlayers.contains(playerName)) {
@@ -295,7 +294,7 @@ public class Server {
     }
 
     /**
-     * Checks if a username is already being used.
+     * Checks if a username is already taken.
      * @param playerName The name to check.
      * @return true if taken, false otherwise.
      */
@@ -304,7 +303,7 @@ public class Server {
     }
 
     /**
-     * Broadcasts the updated player lists and lobby play-button status to everyone.
+     * Broadcasts updated player lists and lobby play-button status to everyone.
      */
     public static synchronized void updateAllClients() {
         String players = "WAITING:" + String.join(",", waitingRoom);
@@ -322,15 +321,15 @@ public class Server {
     }
 
     /**
-     * Terminates the game session, broadcasts results, and clears the waiting room.
+     * Terminates the game session, broadcasts results, and clears state.
      * @param message The termination reason or winner announcement.
      */
     public static synchronized void stopGame(String message) {
-        // 1. Send results first while players are still in the room
-        broadcast(gameLogic.getWinnerListMessage());
+        // 1. Broadcast results and termination message first while players are tracked
+        broadcast(gameLogic.getWinnerListMessage()); 
         broadcast(message); 
 
-        // 2. Perform stop and cleanup
+        // 2. Perform shutdown and cleanup
         gameLogic.endGame(); 
         waitingRoom.clear(); 
         updateAllClients();
@@ -339,7 +338,7 @@ public class Server {
     }
 
     /**
-     * Removes a player specifically from the waiting room list.
+     * Manually removes a player from the waiting room list.
      * @param playerName Name of the player leaving.
      */
     public static synchronized void removeFromWaitingRoom(String playerName) {
@@ -347,4 +346,4 @@ public class Server {
         System.out.println(playerName + " left the waiting room.");
     }
     
-} // class end
+} // end class
