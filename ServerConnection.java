@@ -9,7 +9,7 @@ import javax.swing.border.CompoundBorder;
 
 /**
  * Listens for messages from the server and updates the Client GUI.
- * Runs in a separate thread to keep the UI responsive.
+ * Runs in a separate thread to keep the UI responsive and handle network traffic.
  */
 public class ServerConnection implements Runnable {
 
@@ -18,10 +18,10 @@ public class ServerConnection implements Runnable {
     private ClientGUI gui;
 
     /**
-     * Constructor to initialize the server connection and the GUI reference.
-     * @param s The socket connected to the server.
-     * @param gui The main Client GUI instance.
-     * @throws IOException If an input stream cannot be created.
+     * Initializes the connection to the server and sets up the input reader.
+     * @param s The active socket connection.
+     * @param gui Reference to the main Client GUI.
+     * @throws IOException If the input stream cannot be created.
      */
     public ServerConnection(Socket s, ClientGUI gui) throws IOException {
         this.server = s;
@@ -31,8 +31,8 @@ public class ServerConnection implements Runnable {
     }
 
     /**
-     * The main execution loop for the thread.
-     * Continuously reads messages from the server as long as the connection is open.
+     * The main execution loop for the thread. 
+     * Continues to read lines from the server until the connection is closed.
      */
     @Override
     public void run() {
@@ -48,17 +48,17 @@ public class ServerConnection implements Runnable {
     }
 
     /**
-     * Flag to prevent duplicate Game Over windows from appearing simultaneously.
+     * Flag used to prevent multiple Game Over dialogs from appearing simultaneously.
      */
     private boolean isGameOverWindowShowing = false;
 
     /**
      * Parses the incoming server message and triggers the corresponding GUI action.
-     * @param message The raw string message received from the server.
+     * @param message The raw protocol string received from the server.
      */
     private void handleMessage(String message) {
         
-        // Handles player list updates for the initial connection
+        // Protocol: Handle player list updates for the Lobby
         if (message.startsWith("PLAYERS:")) {
             List<String> players = gui.parseNames(message.substring(8));
             SwingUtilities.invokeLater(() -> {
@@ -66,13 +66,22 @@ public class ServerConnection implements Runnable {
                 gui.showSuccessAndNavigate(); 
             });
         }
-        // Updates the waiting room player list
+        // Protocol: Handle waiting room updates
         else if (message.startsWith("WAITING:")) {
             List<String> players = gui.parseNames(message.substring(8));
             SwingUtilities.invokeLater(() -> gui.updateWaitingPlayers(players));
         }
+        // Protocol: Handle general information messages to be displayed in game chat
+        else if (message.startsWith("INFO:")) {
+            String infoMsg = message.substring(5); // Remove "INFO:" prefix
+            SwingUtilities.invokeLater(() -> {
+                if (gui.getGameScreen() != null) {
+                    gui.getGameScreen().appendStatus(infoMsg);
+                }
+            });
+        }
         
-        // 1. Ignore WINNER message for dialogs (only log it in the chat status)
+        // Protocol: Update winner info in the status area (without pop-up)
         else if (message.startsWith("WINNER:")) {
             String name = message.substring(7);
             SwingUtilities.invokeLater(() -> {
@@ -82,7 +91,7 @@ public class ServerConnection implements Runnable {
             });
         }
 
-        // 2. Process WINNER_LIST and use a flag lock to prevent multiple windows
+        // Protocol: Display detailed winner leaderboard using a custom dialog
         else if (message.startsWith("WINNER_LIST:")) {
             if (isGameOverWindowShowing) return;
             isGameOverWindowShowing = true;
@@ -95,7 +104,7 @@ public class ServerConnection implements Runnable {
             });
         }
 
-        // Handles cases where the game ends without a winner
+        // Protocol: Handle cases where the game ends without a specific winner
         else if (message.startsWith("NO_WINNER:")) {
             if (isGameOverWindowShowing) return;
             isGameOverWindowShowing = true;
@@ -107,70 +116,64 @@ public class ServerConnection implements Runnable {
             });
         }
 
-        // Updates player scores in the game UI
+        // Protocol: Update scores displayed in the GameScreen
         else if (message.startsWith("SCORES:")) {
              String scores = message.substring(7);
              SwingUtilities.invokeLater(() -> {
                    if (gui.getGameScreen() != null) gui.getGameScreen().updateScore(scores);
              });
         }
-        // Signals the start of the game and switches the view
+        // Protocol: Transition to the GameScreen and force repaint
         else if (message.equals("GAME_START")) {
             isGameOverWindowShowing = false;
             SwingUtilities.invokeLater(() -> {
                 gui.showGameScreen();
-                // Force the panel to repaint immediately on start
                 if (gui.getGameScreen() != null) {
                     gui.getGameScreen().repaint();
                 }
             });
         }
-        // Receives and applies specific level rules and constraints
+        // Protocol: Update current level info (topic, forbidden letter, etc.)
         else if (message.startsWith("LEVEL_RULES:")) {
             String[] p = message.split(":");
             SwingUtilities.invokeLater(() -> {
-                // 1. Show the screen first
                 gui.showGameScreen(); 
-                
-                // 2. Update data
                 gui.getGameScreen().updateGameInfo(p[1], p[2], p[3], p[5]);
-                
-                // 3. Request full revalidation and repaint of background and components
                 gui.getGameScreen().revalidate();
                 gui.getGameScreen().repaint();
             });
         }
-        // Updates the remaining time for the current round
+        // Protocol: Update the current round timer
         else if (message.startsWith("TIMER_UPDATE:")) {
             SwingUtilities.invokeLater(() -> gui.getGameScreen().updateTimer(message.substring(13)));
         }
-        // Displays validation results of submitted words
+        // Protocol: Append word validation feedback to the chat
         else if (message.startsWith("VALID_WORD:") || message.startsWith("INVALID_WORD:")) {
             SwingUtilities.invokeLater(() -> gui.getGameScreen().appendStatus(message));
         }
-        // Disables the play button if the room is full or game is in progress
+        // Protocol: Disable the lobby play button during an active game
         else if (message.equals("DISABLE_PLAY")) {
             SwingUtilities.invokeLater(() -> gui.getLobbyScreen().setPlayButtonEnabled(false));
         } 
-        // Enables the play button when the lobby is ready
+        // Protocol: Enable the lobby play button
         else if (message.equals("ENABLE_PLAY")) {
             SwingUtilities.invokeLater(() -> gui.getLobbyScreen().setPlayButtonEnabled(true));
         }
-        // Updates the master game timer
+        // Protocol: Update the master session timer
         else if (message.startsWith("TOTAL_TIMER_UPDATE:")) {
             if (gui.getGameScreen() != null) {
                 SwingUtilities.invokeLater(() -> gui.getGameScreen().updateTotalTimer(message.substring(19)));
             }
         }
-        // Handles successful exit from the waiting room back to the lobby
+        // Protocol: Confirm successful exit from the waiting room
         else if (message.equals("LEFT_WAITING_ROOM_SUCCESS")) {
             SwingUtilities.invokeLater(() -> gui.showLobby());
         }
     }
 
     /**
-     * Displays a custom, styled dialog showing the final game results and leaderboard.
-     * @param data The score data string formatted as "Player=Score,..."
+     * Displays a customized, styled dialog for showing final game results.
+     * @param data The results data string formatted for parsing.
      */
     private void showCustomResultsDialog(String data) {
         JDialog resultsDialog = new JDialog(gui, "Game Results", true);
@@ -178,9 +181,9 @@ public class ServerConnection implements Runnable {
         resultsDialog.setSize(450, 550);
         resultsDialog.setLocationRelativeTo(gui);
 
-        // Colors inspired by GameScreen aesthetics
+        // Styling constants inspired by the GameScreen aesthetic
         Color colorBg = new Color(255, 248, 235);
-        Color colorAccent = new Color(110, 145, 105); // Success/Win color
+        Color colorAccent = new Color(110, 145, 105); // Success/Winner color
         Color colorText = new Color(55, 40, 25);
 
         JPanel mainContent = new JPanel();
@@ -188,7 +191,7 @@ public class ServerConnection implements Runnable {
         mainContent.setBackground(colorBg);
         mainContent.setBorder(new EmptyBorder(30, 30, 30, 30));
 
-        // Parse the scores data
+        // Parse and process leaderboard data
         String[] entries = data.split(",");
         String topWinner = entries[0].split("=")[0];
 
@@ -202,7 +205,7 @@ public class ServerConnection implements Runnable {
         winnerLabel.setForeground(colorAccent);
         winnerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Leaderboard panel
+        // Results leaderboard panel
         JPanel scorePanel = new JPanel();
         scorePanel.setLayout(new GridLayout(0, 1, 10, 10));
         scorePanel.setBackground(colorBg);
@@ -221,12 +224,12 @@ public class ServerConnection implements Runnable {
             JLabel pLabel = new JLabel(parts[0] + " ➔ " + parts[1] + " Points");
             pLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
             pLabel.setForeground(colorText);
-            // Highlight the top winner with a different color
+            // Highlight the overall winner
             if(parts[0].equals(topWinner)) pLabel.setForeground(new Color(180, 140, 50));
             scorePanel.add(pLabel);
         }
 
-        // Close button to return to lobby
+        // Close button to navigate back to Lobby
         JButton closeBtn = new JButton("Back to Lobby");
         closeBtn.setBackground(colorText);
         closeBtn.setForeground(Color.WHITE);
@@ -236,7 +239,7 @@ public class ServerConnection implements Runnable {
         closeBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
         closeBtn.addActionListener(e -> resultsDialog.dispose());
 
-        // Assemble components
+        // Assemble components into the main container
         mainContent.add(winnerIcon);
         mainContent.add(Box.createRigidArea(new Dimension(0, 10)));
         mainContent.add(winnerLabel);
@@ -248,4 +251,4 @@ public class ServerConnection implements Runnable {
         resultsDialog.add(mainContent);
         resultsDialog.setVisible(true);
     }
-} // class end
+}
