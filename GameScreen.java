@@ -7,8 +7,8 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 
 /**
- * GameScreen provides the main gameplay interface for the client.
- * It manages the display of game statistics, status messages, and user input.
+ * GameScreen provides the main gameplay interface for the user.
+ * It handles the display of game information, player logs, and user input.
  */
 public class GameScreen extends JPanel {
 
@@ -19,16 +19,16 @@ public class GameScreen extends JPanel {
     private Image backgroundImage;
     private JLabel totalGameTimerLabel;
 
-    // Visual Constants: Colors for text, panels, and buttons
+    // Visual Constants: Colors for text and UI elements
     private final Color COLOR_TEXT_DARK = new Color(55, 40, 25);
     private final Color COLOR_PANEL = new Color(255, 248, 235);
     private final Color COLOR_SUBMIT = new Color(110, 145, 105);
     private final Color COLOR_LEAVE = new Color(170, 75, 75);
 
     /**
-     * Constructs the GameScreen panel and initializes the UI components.
-     * @param submitAction Action listener for submitting words.
-     * @param leaveAction Action listener for leaving the current game.
+     * Constructs the GameScreen panel and initializes all UI components.
+     * @param submitAction Action listener for the submit button.
+     * @param leaveAction Action listener for the leave button.
      */
     public GameScreen(ActionListener submitAction, ActionListener leaveAction) {
 
@@ -36,7 +36,7 @@ public class GameScreen extends JPanel {
         setOpaque(false);
         setBorder(new EmptyBorder(20, 25, 20, 25));
 
-        // Load background image for the game screen
+        // Loading the blurred background image
         try {
             backgroundImage = new ImageIcon("src/background_blurred.png").getImage();
         } catch (Exception e) {
@@ -44,7 +44,7 @@ public class GameScreen extends JPanel {
         }
 
         // ================= TOP BAR =================
-        // Contains level info, topic, forbidden letter, and timers.
+        // Displays current level, topic, forbidden letter, and timers.
 
         JPanel topContainer = new JPanel(new BorderLayout());
         topContainer.setOpaque(false);
@@ -67,21 +67,27 @@ public class GameScreen extends JPanel {
         topBar.add(createInfoCard(scoreLabel));
 
         topContainer.add(topBar, BorderLayout.CENTER);
+
         add(topContainer, BorderLayout.NORTH);
 
         // ================= CENTER =================
-        // Displays the game activity logs and word validation results.
+        // Displays validation messages and game status history.
 
         statusArea = new JTextArea();
+
         statusArea.setEditable(false);
         statusArea.setLineWrap(true);
         statusArea.setWrapStyleWord(true);
+
         statusArea.setFont(new Font("Monospaced", Font.PLAIN, 17));
         statusArea.setForeground(COLOR_TEXT_DARK);
+
         statusArea.setBackground(Color.WHITE);
+
         statusArea.setBorder(new EmptyBorder(18, 18, 18, 18));
 
         JScrollPane scrollPane = new JScrollPane(statusArea);
+
         scrollPane.setBorder(new CompoundBorder(
                 new LineBorder(new Color(80, 60, 40), 2),
                 new EmptyBorder(5, 5, 5, 5)
@@ -90,18 +96,22 @@ public class GameScreen extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
 
         // ================= BOTTOM =================
-        // User input field and action buttons (Submit/Leave).
+        // Includes the input text field and action buttons.
 
         JPanel bottomPanel = new JPanel(new BorderLayout(15, 0));
         bottomPanel.setOpaque(false);
 
         inputField = new JTextField();
+
         inputField.setFont(new Font("Serif", Font.BOLD, 20));
+
         inputField.setPreferredSize(new Dimension(0, 55));
+
         inputField.setBorder(new CompoundBorder(
                 new LineBorder(COLOR_TEXT_DARK, 2),
                 new EmptyBorder(10, 15, 10, 15)
         ));
+
         inputField.addActionListener(submitAction);
 
         submitButton = new RoundedButton(
@@ -109,6 +119,7 @@ public class GameScreen extends JPanel {
                 COLOR_SUBMIT,
                 Color.WHITE
         );
+
         submitButton.addActionListener(submitAction);
 
         leaveButton = new RoundedButton(
@@ -116,6 +127,7 @@ public class GameScreen extends JPanel {
                 COLOR_LEAVE,
                 Color.WHITE
         );
+
         leaveButton.addActionListener(leaveAction);
 
         submitButton.setPreferredSize(new Dimension(160, 55));
@@ -123,6 +135,7 @@ public class GameScreen extends JPanel {
 
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 15, 0));
         buttonPanel.setOpaque(false);
+
         buttonPanel.add(submitButton);
         buttonPanel.add(leaveButton);
 
@@ -133,17 +146,20 @@ public class GameScreen extends JPanel {
     }
 
     /**
-     * Helper method to create a stylized info card for game stats.
-     * @param label The JLabel containing the text to display.
-     * @return A JPanel representing the info card.
+     * Helper method to create a stylized info card panel for displaying stats.
+     * @param label The JLabel to be wrapped in the card.
+     * @return A styled JPanel container.
      */
     private JPanel createInfoCard(JLabel label) {
 
         JPanel panel = new JPanel(new BorderLayout());
+
         panel.setOpaque(false);
 
         JPanel inner = new JPanel(new BorderLayout());
+
         inner.setBackground(COLOR_PANEL);
+
         inner.setBorder(new CompoundBorder(
                 new LineBorder(new Color(85, 60, 35), 2),
                 new EmptyBorder(12, 10, 12, 10)
@@ -153,19 +169,21 @@ public class GameScreen extends JPanel {
         label.setForeground(COLOR_TEXT_DARK);
 
         inner.add(label, BorderLayout.CENTER);
+
         panel.add(inner, BorderLayout.CENTER);
 
         return panel;
     }
 
     /**
-     * Updates the core game information labels.
-     * @param level Current level number.
+     * Updates the game information labels based on level data.
+     * @param level Current game level.
      * @param topic Current word topic.
      * @param forbidden The restricted character.
-     * @param timer Current level time remaining.
+     * @param timer Remaining time for the current level.
      */
     public void updateGameInfo(String level, String topic, String forbidden, String timer) {
+
         levelLabel.setText("Level: " + level);
         topicLabel.setText("Topic: " + topic);
         forbiddenLabel.setText("Forbidden: " + forbidden);
@@ -173,50 +191,61 @@ public class GameScreen extends JPanel {
     }
 
     /**
-     * Cleans and updates the leaderboard display in the UI.
-     * @param scoresRaw The raw score string received from the server.
+     * Parses and updates the scoreboard display.
+     * @param scoresRaw The raw protocol score string from the server.
      */
     public void updateScore(String scoresRaw) {
+
         String cleanScores = scoresRaw.replace("SCORES:", "");
+
         scoreLabel.setText("Score: " + cleanScores.replace(",", " | "));
     }
 
     /**
-     * Updates the level countdown timer label.
-     * @param seconds Remaining seconds for the current level.
+     * Updates the level countdown timer display.
+     * @param seconds Remaining seconds.
      */
     public void updateTimer(String seconds) {
+
         timerLabel.setText("Time: " + seconds + "s");
     }
 
     /**
-     * Appends a new message to the status area and scrolls to the bottom.
-     * @param msg The message to be logged.
+     * Appends a new message to the status area and scrolls to the latest update.
+     * @param msg The message string to log.
      */
     public void appendStatus(String msg) {
+
         statusArea.append("> " + msg + "\n");
+
         statusArea.setCaretPosition(
                 statusArea.getDocument().getLength()
         );
     }
 
     /**
-     * Retrieves the text entered by the user and clears the input field.
-     * @return The trimmed word entered by the player.
+     * Retrieves the player's input from the field and clears it for the next entry.
+     * @return The trimmed word string entered by the player.
      */
     public String getInputWord() {
+
         String word = inputField.getText().trim();
+
         inputField.setText("");
+
         return word;
     }
 
     /**
-     * Custom painting to render the background image.
+     * Custom painting to render the background image on the panel.
      */
     @Override
     protected void paintComponent(Graphics g) {
+
         super.paintComponent(g);
+
         if (backgroundImage != null) {
+
             g.drawImage(
                     backgroundImage,
                     0,
@@ -229,15 +258,16 @@ public class GameScreen extends JPanel {
     }
 
     /**
-     * Updates the master game session timer label.
-     * @param time The formatted time string (e.g., 07:00).
+     * Updates the total session timer label.
+     * @param time Formatted time string (e.g., "07:00").
      */
     public void updateTotalTimer(String time) {
+
         totalGameTimerLabel.setText("Total: " + time);
     }
 
     /**
-     * A custom JButton implementation with rounded corners and hover effects.
+     * A custom JButton inner class that renders rounded corners and hover effects.
      */
     private static class RoundedButton extends JButton {
 
@@ -245,21 +275,27 @@ public class GameScreen extends JPanel {
         private Color fgColor;
 
         RoundedButton(String text, Color bg, Color fg) {
+
             super(text);
+
             this.bgColor = bg;
             this.fgColor = fg;
 
             setContentAreaFilled(false);
             setFocusPainted(false);
             setBorderPainted(false);
+
             setForeground(fgColor);
+
             setFont(new Font("Serif", Font.BOLD, 16));
+
             setCursor(new Cursor(Cursor.HAND_CURSOR));
 
             Color hoverColor = bg.brighter();
 
-            // Add hover effect listeners
+            // Handle hover state color changes
             addMouseListener(new MouseAdapter() {
+
                 @Override
                 public void mouseEntered(MouseEvent e) {
                     bgColor = hoverColor;
@@ -275,16 +311,20 @@ public class GameScreen extends JPanel {
         }
 
         /**
-         * Custom painting to draw the rounded background.
+         * Custom painting to draw the rounded background shape.
          */
         @Override
         protected void paintComponent(Graphics g) {
+
             Graphics2D g2d = (Graphics2D) g.create();
+
             g2d.setRenderingHint(
                     RenderingHints.KEY_ANTIALIASING,
                     RenderingHints.VALUE_ANTIALIAS_ON
             );
+
             g2d.setColor(bgColor);
+
             g2d.fillRoundRect(
                     0,
                     0,
@@ -293,7 +333,9 @@ public class GameScreen extends JPanel {
                     22,
                     22
             );
+
             super.paintComponent(g2d);
+
             g2d.dispose();
         }
     }
