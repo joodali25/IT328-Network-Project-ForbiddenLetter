@@ -184,11 +184,36 @@ public class GameScreen extends JPanel {
      */
     public void updateGameInfo(String level, String topic, String forbidden, String timer) {
 
-        levelLabel.setText("Level: " + level);
-        topicLabel.setText("Topic: " + topic);
-        forbiddenLabel.setText("Forbidden: " + forbidden);
-        timerLabel.setText("Time: " + timer + "s");
+    String emoji = getTopicEmoji(topic);
+
+    levelLabel.setText("Level: " + level);
+    topicLabel.setText("Topic: " + emoji + " " + topic);
+    forbiddenLabel.setText("Forbidden: " + forbidden);
+    timerLabel.setText("Time: " + timer + "s");
+
+    appendStatus("New Level " + level + " | Topic: " + emoji + " " + topic + " | Forbidden: " + forbidden);
+}
+    
+    private String getTopicEmoji(String topic) {
+    if (topic == null) {
+        return "❓";
     }
+
+    switch (topic.toLowerCase()) {
+        case "fruits":
+            return "🍎";
+        case "animals":
+            return "🐾";
+        case "countries":
+            return "🌍";
+        case "school":
+            return "📚";
+        case "sports":
+            return "🏅";
+        default:
+            return "💡";
+    }
+}
 
     /**
      * Parses and updates the scoreboard display.
@@ -222,6 +247,11 @@ public class GameScreen extends JPanel {
                 statusArea.getDocument().getLength()
         );
     }
+    
+        public void clearStatusArea() {
+        this.statusArea.setText("");
+        this.inputField.setText("");
+          }
 
     /**
      * Retrieves the player's input from the field and clears it for the next entry.
@@ -309,6 +339,7 @@ public class GameScreen extends JPanel {
                 }
             });
         }
+        
 
         /**
          * Custom painting to draw the rounded background shape.
@@ -337,6 +368,8 @@ public class GameScreen extends JPanel {
             super.paintComponent(g2d);
 
             g2d.dispose();
-        }
-    }
-}
+        }//end paintcomonent
+        
+    }//end roundbutton
+    
+}//end class
