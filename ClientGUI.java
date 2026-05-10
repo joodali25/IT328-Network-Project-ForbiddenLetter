@@ -200,10 +200,15 @@ public class ClientGUI extends JFrame {
         });
     }
 
+    
     /**
      * Switches the view back to the Lobby screen.
      */
-    public void showLobby() { cardLayout.show(mainPanel, "LOBBY"); }
+    public void showLobby() { 
+        if (gameScreen != null) {
+        gameScreen.clearStatusArea();
+    }
+    cardLayout.show(mainPanel, "LOBBY"); }
 
     /**
      * Handles connection failures by displaying an error and resetting state.
@@ -249,6 +254,7 @@ public class ClientGUI extends JFrame {
      */
     public void showGameScreen() {
         SwingUtilities.invokeLater(() -> {
+            gameScreen.clearStatusArea();
             cardLayout.show(mainPanel, "GAME");
             
             // Revalidate and repaint to ensure components (and backgrounds) appear correctly
@@ -280,4 +286,5 @@ public class ClientGUI extends JFrame {
         }
     }
     
+
 }
