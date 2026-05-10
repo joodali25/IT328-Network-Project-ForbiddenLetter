@@ -169,7 +169,7 @@ public class WaitingRoomScreen extends JPanel {
         
         // Start 30-second countdown when at least 2 players are present
         if (players.size() == 2 && !isCountdownActive) {
-            startCountdown(30);
+            startCountdown(10);//it was 30 but changed it for thr itfAIR
         }
         
         // Handle full room state
