@@ -15,6 +15,7 @@ class NewClient implements Runnable {
     private PrintWriter out;
     private String playerName;
     private boolean isConnected;
+    private boolean alreadyRemoved = false;
     private ArrayList<NewClient> clients;
 
     /**
@@ -98,31 +99,31 @@ class NewClient implements Runnable {
                 }
 
                 // Protocol 4: Handle player leaving the game manually via GUI actions
-                else if (request.equals("LEAVE")) {
-                    if (playerName != null) {
-                        Server.removePlayerFromGame(playerName);
-                        
-                        // Logic update: End the game session if participants drop below the minimum required (2)
-                        if (Server.gameLogic.isGameRunning() && Server.getWaitingCount() < 2) {
-                            Server.stopGame("NO_WINNER:Not enough players to continue.");
-                        }
-                    }
-                    break;
-                }
+               else if (request.equals("LEAVE")) {
+               if (playerName != null && !alreadyRemoved) {
+               Server.removePlayerFromGame(playerName);
+               alreadyRemoved = true;
+        
+               if (Server.gameLogic.isGameRunning() && Server.getWaitingCount() < 2) {
+               Server.stopGame("NO_WINNER:Not enough players to continue.");
+        }
+    }
+    break;
+}
             }
 
         } catch (IOException e) {
             System.out.println("Client disconnected unexpectedly: " + playerName);
         } finally {
             // Cleanup: Remove player from game logic if connection is lost
-            if (playerName != null) {
-                Server.removePlayerFromGame(playerName);
-                
-                // Logic update: Ensure game closure and list cleanup on sudden disconnects
-                if (Server.gameLogic.isGameRunning() && Server.getWaitingCount() < 2) {
-                    Server.stopGame("NO_WINNER:Connection lost. Game ended.");
-                }
-            }
+            if (playerName != null && !alreadyRemoved) {
+    Server.removePlayerFromGame(playerName);
+    alreadyRemoved = true;
+    
+    if (Server.gameLogic.isGameRunning() && Server.getWaitingCount() < 2) {
+        Server.stopGame("NO_WINNER:Connection lost. Game ended.");
+    }
+}
             closeResources();
         }
     }
