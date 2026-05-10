@@ -79,11 +79,11 @@ public class Server {
                     }
                 }
             }
-        }, 30000); // 30 seconds delay
+        }, 10000); // 30 seconds delay => 10 for the itfair
     }
 
     /**
-     * Transitions from waiting phase to active gameplay.
+     * Transitions from waiting phase to active game play.
      * Cancels the waiting timer and broadcasts initial game signals to participants.
      */
     private static void startGame() {
@@ -237,8 +237,13 @@ public class Server {
         connectedPlayers.remove(playerName);
         waitingRoom.remove(playerName);
         gameLogic.removePlayer(playerName);
+        
+        //3. remove the score 
+        if (gameLogic.isGameRunning()) {
+        broadcastToGame(gameLogic.getScoresMessage());
+    }
 
-        // 3. Manage timers and termination logic
+        // 4. Manage timers and termination logic
         if (waitingRoom.size() < 2) {
             if (waitingTimer != null) {
                 waitingTimer.cancel();
